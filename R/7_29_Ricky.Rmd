@@ -1,0 +1,75 @@
+---
+title: "Ricky EDA"
+author: "Richard 'Ricky' Kuehn"
+date: "2024-07-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# libraries
+library(tidyverse)
+library(ggcorrplot)
+library(grid)
+library(vcd)
+library(knitr)
+
+# set the github folder to YOUR root working directory
+opts_knit$set(root.dir = "/Users/rickykuehn/Desktop/UVA/Summer/Linear_Models/Final Project/Linear-Models-Final")
+```
+
+***import data***
+```{r}
+clean <- read_csv("data/clean/linear_models_project_data.csv")
+```
+
+***replace NAN, drop NA, drop first column containing old inde***
+```{r}
+
+clean = replace(clean, clean=="NaN", NA)
+clean = clean %>% drop_na()
+clean = clean[,-1]
+glimpse(clean) 
+```
+
+***change data types***
+```{r}
+# convert to numeric
+clean2 <- clean %>% mutate(
+age2 = as.numeric(age),
+final_weight = as.numeric(fnlwgt),
+grade = as.numeric(`education-num`),
+capital.gain = as.numeric(`capital-gain`),
+capital.loss = as.numeric(`capital-loss`),
+work.week.hrs = as.numeric(`hours-per-week`),
+
+# convert to categorical (factor)
+work_type = as.factor(workclass),
+education.level = as.factor(education),
+marital.status = as.factor(`marital-status`),
+occupation2 = as.factor(occupation),
+relationship2 = as.factor(relationship),
+race2 = as.factor(race),
+sex2 = as.factor(sex),
+native.country = as.factor(`native-country`),
+over.50K = ifelse(income == "<=50K", FALSE, TRUE)
+) %>% select(age2, final_weight, grade, capital.gain, capital.loss, work.week.hrs, work_type, education.level, marital.status, occupation2, relationship2, race2, sex2, native.country, over.50K)
+
+# rename columns
+clean2 <- clean2 %>% 
+  rename(
+    age = age2,
+    occupation = occupation2,
+    relationship = relationship2,
+    race = race2,
+    sex = sex2
+  )
+
+glimpse(clean2)
+```
+
+***correlation***
+```{r}
+cor_mat <- cor(clean2[,c('age','final_weight','grade','capital.gain','capital.loss','work.week.hrs')])
+ggcorrplot(cor_mat,lab=TRUE, type='full')
+```
+
