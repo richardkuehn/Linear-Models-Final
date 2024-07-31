@@ -1,0 +1,162 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(ggcorrplot)
+library(grid)
+library(vcd)
+```
+
+
+
+```{r}
+df = expectancy = read.csv('~/Downloads/linear_models_project_data.csv')
+head(df)
+```
+
+### Dropping NA values
+```{r}
+
+df = replace(df, df=="NaN", NA)
+df = df %>% drop_na()
+df %>% head()
+```
+
+
+# data cleaning
+```{r}
+df = replace(df, df=="<=50K.", "<=50K")
+df = replace(df, df==">50K.", ">50K")
+
+df %>% head()
+```
+# Collapsing some of the categories in the educatioin column
+```{r}
+df$education = replace(df$education, df$education=="1st-4th", "Elementary/Middle")
+df$education = replace(df$education, df$education=="5th-6th", "Elementary/Middle")
+df$education = replace(df$education, df$education=="7th-8th", "Elementary/Middle")
+df$education = replace(df$education, df$education=="Preschool", "Elementary/Middle")
+df$education = replace(df$education, df$education=="Assoc-acdm", "Associates")
+df$education = replace(df$education, df$education=="Assoc-voc", "Associates")
+df$education = replace(df$education, df$education=="9th", "Highschool")
+df$education = replace(df$education, df$education=="10th", "Highschool")
+df$education = replace(df$education, df$education=="11th", "Highschool")
+df$education = replace(df$education, df$education=="12th", "Highschool")
+df$education = replace(df$education, df$education=="HS-grad", "Highschool")
+
+
+df
+```
+
+
+### showing how many rows we have
+```{r}
+nrow(df)
+```
+
+
+
+# How does the distribution of income vary across different age groups?
+```{r}
+
+df$age_group <- cut(df$age, 
+                      breaks = c(0, 20, 30, 40, 50, 60, 70, 80, Inf), 
+                      labels = c("0-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-80", "81+"), 
+                      right = FALSE)
+
+df %>%
+  group_by(income, age_group) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = age_group, y = proportion, fill = income)) + 
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+# What is the relationship between the number of hours worked per week and income level?
+```{r}
+df %>% ggplot(aes(x=hours.per.week, y=income, color=income, fill=income))+geom_boxplot()
+```
+
+# What is the relationship between the number of hours worked per week and income level?
+
+```{r}
+df %>% ggplot(aes(x=hours.per.week, y=income, color=income))+geom_violin()
+```
+
+
+# Converting income column into dummy variables
+```{r}
+data_dummies = fastDummies::dummy_cols(df, select_columns="income")
+data_dummies
+```
+
+# Correlation between education number and income greater than 50K
+```{r}
+cor(data_dummies$education.num, data_dummies$`income_>50K`)
+```
+
+# Income level depending on education level
+
+```{r}
+df %>%
+  group_by(income, education) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = education, y = proportion, fill = income)) + 
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Interpretation:  As we can see from the above graph, the most amount of people who earns greater than 50K is people who have bachelors degree and this is because in our data we have more people who have bachelors degree than people who have Masters or Doctorate degree. Same idea applies to Highschool column, because we have more data on people whose highest level of education is highschool, that is why it looks people who earns less than 50K is in highschool column**
+
+
+
+# Income level depending on occupation type
+
+```{r}
+df %>%
+  group_by(income, occupation) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = occupation, y = proportion, fill = income)) + 
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Interpretation: As we can see from the bar graph above, we can say that the most amount of people who earns above 50K is people who has executive/managerial positions. After that it comes people who has a position in Prof/specialty. These makes sense because in real life as well, Executive managers earn a lot of money and Professors who make a lot of research can earn a lot of money. On the other hand, the most amount of people who make less than 50K is people who work in clerical jobs. These might include data entring, answering phone calls, filling paperwork and etc. **
+
+
+
+# Correlation Matrix between all the numerical variables.
+
+**Interpretation: As you can see in the correlation matrix, multicollinearity is not an issue becase there are no variables that are highly correlated with each other**
+
+```{r}
+cor_mat <- cor(df[,c('age',"education.num", 'capital.gain','capital.loss','hours.per.week')])
+ggcorrplot(cor_mat,lab=TRUE, type='full')
+```
+
+
+
+# Association between education level and income
+```{r}
+
+contingency_table = table(df$education, df$income)
+
+chisq.test(contingency_table)
+
+
+```
+
+As we can see from the Chi-squared test, education and income has a very high association because the chi-square value is extremely high and p value is really low. This means that we have to reject null hypothesis and conclude that there is a high association between education and income.
+
+
+
+
