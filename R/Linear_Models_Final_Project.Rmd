@@ -157,6 +157,119 @@ chisq.test(contingency_table)
 
 As we can see from the Chi-squared test, education and income has a very high association because the chi-square value is extremely high and p value is really low. This means that we have to reject null hypothesis and conclude that there is a high association between education and income.
 
+```{r}
+df
+```
+
+
+
+# Logistic Regression with Lasso and Cross Validation
+
+
+# Train Test split by 80% training and 20% testing datasets
+```{r}
+library(glmnet)
+library(caret)
+
+X = model.matrix(income~0+., data=df)
+X = scale(X)
+
+y= df$income
+
+
+train_index = sample(1:nrow(df), 0.8 * nrow(df))
+
+train_X = X[train_index, ]
+train_y = y[train_index]
+
+test_X = X[-train_index, ]
+test_y = y[-train_index]
+
+
+```
+
+
+
+# Running a 10 fold cross validation and finding out the best lambda
+```{r}
+set.seed(123)
+cv_model = cv.glmnet(x=train_X, y=train_y, alpha=1, family="binomial", type.measure = "class", nfolds = 10)
+
+best_lambda <- cv_model$lambda.min
+best_lambda
+```
+
+
+
+```{r}
+coefficient_matrix = as.matrix(coef(cv_model))
+non_zero_indices <- which(coefficient_matrix != 0)
+
+
+non_zero_coefs <- coefficient_matrix[non_zero_indices, ]
+
+
+names_of_predictors = rownames(coefficient_matrix)[non_zero_indices]
+#cbind(rownames(coefficient_matrix)[non_zero_indices], coefficient_matrix[coefficient_matrix!=0])
+```
+
+
+# Finalizing the model by using the best lambda found
+```{r}
+final_model <- glmnet(train_X, train_y, alpha = 1, family = "binomial", lambda = best_lambda)
+```
+
+# Casting the test_y data to be 1s and 0s
+```{r}
+#cbind(predicted_classes, test_y)
+test_y = ifelse(test_y == ">50K", 1, 0)
+
+```
+
+
+# Make predictions and construct a confusion matrix where 0 represents people who earn less than or equal to 50K and 1 represents people who earn more than 50K
+```{r}
+
+predictions <- predict(final_model, newx = test_X, type = "response")
+#predicted_classes <- ifelse(predictions > 0.5, ">50K", "<=50K")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+
+
+confusion <- confusionMatrix(factor(predicted_classes), factor(test_y))
+print(confusion$table)
+```
+
+# Finding the R squared value of this model
+```{r}
+print(paste("R squared value:", round(R2(predicted_classes, test_y), 4)))
+```
+
+
+```{r}
+tn = confusion$table[1, 1]
+tp = confusion$table[2, 2]
+fp = confusion$table[2, 1]
+fn = confusion$table[1, 2]
+
+precision <- tp / (tp + fp)
+recall <- tp / (tp + fn)
+
+# Calculate F1 Score
+f1_score <- 2 * (precision * recall) / (precision + recall)
+print(paste("Precision:", round(precision,3)))
+print(paste("Recall:   ", round(recall, 3)))
+print(paste("F1 Score: ", round(f1_score,3)))
+
+```
+
+
+
+# Calculate the Accuracy of this model
+```{r}
+accuracy <- mean(predicted_classes == test_y)
+print(paste("Testing Accuracy:", round(100*accuracy, 3)))
+```
+
 
 
 
