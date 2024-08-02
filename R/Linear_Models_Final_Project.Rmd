@@ -199,6 +199,9 @@ best_lambda <- cv_model$lambda.min
 best_lambda
 ```
 
+```{r}
+plot(cv_model)
+```
 
 
 ```{r}
@@ -261,7 +264,7 @@ print(paste("Recall:   ", round(recall, 3)))
 print(paste("F1 Score: ", round(f1_score,3)))
 
 ```
-
+^ Should we make a significance value to contextualize these Type 1 and Type 2 errors?
 
 
 # Calculate the Accuracy of this model
@@ -269,7 +272,9 @@ print(paste("F1 Score: ", round(f1_score,3)))
 accuracy <- mean(predicted_classes == test_y)
 print(paste("Testing Accuracy:", round(100*accuracy, 3)))
 ```
-
+^ Might want to talk about rounding to 0 or 1 how that affects the accuracy of the model.
+^ Would be interesting to visualize the accuracy when prediction < than 0.25 and > than 0.75.
+^ Could count prediction between 0.25 and 0.75 as "unsure" or something along those lines.
 
 
 
