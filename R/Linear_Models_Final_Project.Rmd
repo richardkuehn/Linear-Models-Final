@@ -143,7 +143,19 @@ cor_mat <- cor(df[,c('age',"education.num", 'capital.gain','capital.loss','hours
 ggcorrplot(cor_mat,lab=TRUE, type='full')
 ```
 
-
+```{r}
+value_counts <- table(df$capital.loss)
+df_capital.loss_count <- data.frame(value_counts)
+df_capital.loss_count$pct <- round(100*df_capital.loss_count$Freq / sum(df_capital.loss_count$Freq),2)
+df_capital.loss_count
+```
+```{r}
+value_counts2 <- table(df$capital.gain)
+df_capital.gain_count <- data.frame(value_counts2)
+df_capital.gain_count$pct <- round(100*df_capital.gain_count$Freq / sum(df_capital.gain_count$Freq),2)
+df_capital.gain_count
+```
+^ Might want to think about dropping these columns because they are highly skewed.
 
 # Association between education level and income
 ```{r}
