@@ -259,6 +259,19 @@ predicted_classes <- ifelse(predictions > 0.5, 1, 0)
 
 confusion <- confusionMatrix(factor(predicted_classes), factor(test_y))
 print(confusion$table)
+
+confusion_df <- data.frame(confusion$table)
+confusion_df$Color <- with(confusion_df, ifelse(Prediction == Reference, "green", "red"))
+
+ggplot(data = confusion_df, aes(x = factor(Prediction), y = factor(Reference), fill = Color)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), color = "black", vjust = 1, size = 10) +
+  scale_fill_manual(values = c("green" = "green", "red" = "red")) +
+  theme_minimal() +
+  labs(x = "Predicted", y = "Actual", fill = "Count") +
+  ggtitle("Confusion Matrix Heatmap") +
+  scale_y_discrete(limits = rev(levels(factor(confusion_df$Reference)))) + 
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 # Finding the R squared value of this model
