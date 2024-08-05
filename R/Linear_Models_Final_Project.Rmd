@@ -73,7 +73,8 @@ df %>%
   mutate(proportion = count / sum(count)) %>%
   ungroup() %>% 
   ggplot(aes(x = age_group, y = proportion, fill = income)) + 
-  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Proportion of Income Level per age group") + xlab("Age Group") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Income")
 
 ```
 
@@ -81,7 +82,9 @@ df %>%
 
 # What is the relationship between the number of hours worked per week and income level?
 ```{r}
-df %>% ggplot(aes(x=hours.per.week, y=income, color=income, fill=income))+geom_boxplot()
+df2 <- df
+names(df2)[names(df2) == 'income'] <- 'Income'
+df2 %>% ggplot(aes(x=hours.per.week, y=Income, color=Income, fill=Income))+geom_boxplot() + ggtitle("Hours worked each week per Income Level") + xlab("Hours worked per week") + ylab("Income Level") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 # What is the relationship between the number of hours worked per week and income level?
@@ -105,13 +108,16 @@ cor(data_dummies$education.num, data_dummies$`income_>50K`)
 # Income level depending on education level
 
 ```{r}
+df$education = factor(df$education, levels = c("Elementary/Middle", "Highschool", 'Associates', "Some-college", 'Bachelors','Prof-school', 'Masters', 'Doctorate'))
+
 df %>%
   group_by(income, education) %>%
   summarise(count = n()) %>%
   mutate(proportion = count / sum(count)) %>%
   ungroup() %>% 
   ggplot(aes(x = education, y = proportion, fill = income)) + 
-  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Income Level proportion per Education Level") + xlab("Education Level") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Income")
 ```
 
 **Interpretation:  As we can see from the above graph, the most amount of people who earns greater than 50K is people who have bachelors degree and this is because in our data we have more people who have bachelors degree than people who have Masters or Doctorate degree. Same idea applies to Highschool column, because we have more data on people whose highest level of education is highschool, that is why it looks people who earns less than 50K is in highschool column**
@@ -127,7 +133,8 @@ df %>%
   mutate(proportion = count / sum(count)) %>%
   ungroup() %>% 
   ggplot(aes(x = occupation, y = proportion, fill = income)) + 
-  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Income Level proportion per Occupation") + xlab("Occupation") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Income")
 ```
 
 **Interpretation: As we can see from the bar graph above, we can say that the most amount of people who earns above 50K is people who has executive/managerial positions. After that it comes people who has a position in Prof/specialty. These makes sense because in real life as well, Executive managers earn a lot of money and Professors who make a lot of research can earn a lot of money. On the other hand, the most amount of people who make less than 50K is people who work in clerical jobs. These might include data entring, answering phone calls, filling paperwork and etc. **
