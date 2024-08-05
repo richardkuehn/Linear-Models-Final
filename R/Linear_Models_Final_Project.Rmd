@@ -374,8 +374,39 @@ predictions <- predict(final_model, newx = test_X, type = "response")
 # Showing RMSE, MAPE, R2
 ```{r}
 print(paste("Root Mean Squared Error:", round(RMSE(predictions, test_y), 3)))
+print(paste("Mean Absolute Error:", round(MAE(predictions, test_y), 3)))
+print(paste("Mean Squared Error:", round(mean((predictions - test_y)^2), 3)))
 print(paste("Mean Absolute Percentage Error:", round(mean(abs((test_y-predictions)/test_y))*100,3)))
 print(paste("R squared:", round(caret::R2(predictions, test_y),5)))
+```
+
+
+
+
+# PCA with all categorical converted to factors
+
+```{r}
+library(glmnet)
+library(caret)
+
+
+train_index = sample(1:nrow(df), 0.8 * nrow(df))
+
+df2 <- df[,-c(17)]
+
+train = df2[train_index,]
+test = df2[train_index,]
+
+
+
+library(pls)
+pcr_model <- pcr(age~., data = train,scale = T)
+summary(pcr_model)
+
+predictions <- predict(pcr_model, newdata = train, ncomp = 89)
+
+rmse <- sqrt(mean((test$age - predictions)^2))
+rmse
 ```
 
 
