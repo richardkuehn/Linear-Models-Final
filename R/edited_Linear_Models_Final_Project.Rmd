@@ -174,13 +174,13 @@ ggplot(df, aes(x = marital.status, y = age)) +
 value_counts <- table(df$capital.loss)
 df_capital.loss_count <- data.frame(value_counts)
 df_capital.loss_count$pct <- round(100*df_capital.loss_count$Freq / sum(df_capital.loss_count$Freq),2)
-df_capital.loss_count
+head(df_capital.loss_count)
 ```
 ```{r}
 value_counts2 <- table(df$capital.gain)
 df_capital.gain_count <- data.frame(value_counts2)
 df_capital.gain_count$pct <- round(100*df_capital.gain_count$Freq / sum(df_capital.gain_count$Freq),2)
-df_capital.gain_count
+head(df_capital.gain_count)
 ```
 
 Interpretation: As we can see from the above tables, most of the people in the dataset has 0 capital loss and capital gain. This is because in real life, most of the people do not have capital loss or gain.
@@ -401,7 +401,7 @@ summary(pcr_model)
 
 ***RMSE***
 ```{r}
-predictions <- predict(pcr_model, newdata = train, ncomp = 89)
+predictions <- predict(pcr_model, newdata = train, ncomp = 75)
 rmse <- sqrt(mean((test$age - predictions)^2))
 rmse
 ```
