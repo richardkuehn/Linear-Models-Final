@@ -12,7 +12,10 @@ library(vcd)
 library(glmnet)
 library(caret)
 library(pls)
+library(PRROC)
+library(pROC)
 ```
+
 
 
 ***Load data***
@@ -20,6 +23,7 @@ library(pls)
 df = expectancy = read.csv('~/Downloads/linear_models_project_data.csv')
 head(df)
 ```
+
 
 
 ***Drop missing values***
@@ -31,6 +35,7 @@ df %>% head()
 ```
 
 
+
 ***Rename 'income' values***
 ```{r}
 df = replace(df, df=="<=50K.", "<=50K")
@@ -38,6 +43,7 @@ df = replace(df, df==">50K.", ">50K")
 
 df %>% head()
 ```
+
 
 
 ***Collapse education into bins***
@@ -80,6 +86,7 @@ df %>%
 ```
 
 
+
 ***What is the relationship between the number of hours worked per week and income level?***
 ```{r}
 df2 <- df
@@ -88,10 +95,12 @@ df2 %>% ggplot(aes(x=hours.per.week, y=Income, color=Income, fill=Income))+geom_
 ```
 
 
+
 ***What is the relationship between the number of hours worked per week and income level?***
 ```{r}
 df %>% ggplot(aes(x=hours.per.week, y=income, color=income))+geom_violin()
 ```
+
 
 
 ***Converting income column to dummy variables, find correlation between education number and income greater than 50K***
@@ -99,6 +108,7 @@ df %>% ggplot(aes(x=hours.per.week, y=income, color=income))+geom_violin()
 data_dummies = fastDummies::dummy_cols(df, select_columns="income")
 cor(data_dummies$education.num, data_dummies$`income_>50K`)
 ```
+
 
 
 ***Income level depending on education level***
@@ -118,6 +128,7 @@ df %>%
 Interpretation: As we can see from the above graph, the most amount of people who earns greater than 50K is people who have bachelors degree and this is because in our data we have more people who have bachelors degree than people who have Masters or Doctorate degree. Same idea applies to Highschool column, because we have more data on people whose highest level of education is highschool, that is why it looks people who earns less than 50K is in highschool column
 
 
+
 ***Income level depending on occupation***
 ```{r}
 df %>%
@@ -133,6 +144,7 @@ df %>%
 Interpretation: As we can see from the bar graph above, we can say that the most amount of people who earns above 50K is people who has executive/managerial positions. After that it comes people who has a position in Prof/specialty. These makes sense because in real life as well, Executive managers earn a lot of money and Professors who make a lot of research can earn a lot of money. On the other hand, the most amount of people who make less than 50K is people who work in clerical jobs. These might include data entring, answering phone calls, filling paperwork and etc.
 
 
+
 ***Correlation Matrix between all the numerical variables.***
 ```{r}
 cor_mat <- cor(df[,c('age',"education.num", 'capital.gain','capital.loss','hours.per.week')])
@@ -140,6 +152,7 @@ ggcorrplot(cor_mat,lab=TRUE, type='full')
 ```
 
 Interpretation: As you can see in the correlation matrix, multicollinearity is not an issue becase there are no variables that are highly correlated with each other
+
 
 
 ***What is the relationship between mean hours.per.week and age?***
@@ -157,6 +170,7 @@ ggplot(mean_df, aes(x = mean_hours_per_week, y = age)) +
 ```
 
 
+
 ***What is the relationship between marital status and age?***
 ```{r}
 ggplot(df, aes(x = marital.status, y = age)) +
@@ -167,6 +181,7 @@ ggplot(df, aes(x = marital.status, y = age)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), plot.title = element_text(hjust = 0.5))
 ```
+
 
 
 ***Examine distribution of capital loss and capital gain***
@@ -184,6 +199,7 @@ head(df_capital.gain_count)
 ```
 
 Interpretation: As we can see from the above tables, most of the people in the dataset has 0 capital loss and capital gain. This is because in real life, most of the people do not have capital loss or gain.
+
 
 
 ***Association between education level and income***
@@ -213,6 +229,7 @@ test_y = y[-train_index]
 ```
 
 
+
 ***10 fold cross validation and finding best lambda for 'income' categorical variable***
 ```{r}
 set.seed(123)
@@ -223,10 +240,12 @@ best_lambda
 ```
 
 
+
 ***Plot cross validation model***
 ```{r}
 plot(cv_model)
 ```
+
 
 
 ***Store names of predictor variables***
@@ -241,10 +260,12 @@ names_of_predictors = rownames(coefficient_matrix)[non_zero_indices]
 ```
 
 
+
 ***Finalize logistic model using the ideal lambda value***
 ```{r}
 final_model <- glmnet(train_X, train_y, alpha = 1, family = "binomial", lambda = best_lambda)
 ```
+
 
 
 ***Cast test_y data as 1s and 0s***
@@ -252,6 +273,7 @@ final_model <- glmnet(train_X, train_y, alpha = 1, family = "binomial", lambda =
 #cbind(predicted_classes, test_y)
 test_y = ifelse(test_y == ">50K", 1, 0)
 ```
+
 
 
 ***Make predictions, construct confusion matrix where 0 represents individuals who earn <= 50K and 1 represents individuals who earn > 50K***
@@ -276,10 +298,12 @@ ggplot(data = confusion_df, aes(x = factor(Prediction), y = factor(Reference), f
 ```
 
 
+
 ***Find R squared value of logistic model***
 ```{r}
 print(paste("R squared value:", round(caret::R2(predicted_classes, test_y), 4)))
 ```
+
 
 
 ***Precision, Recall, F1***
@@ -301,10 +325,28 @@ print(paste("F1 Score: ", round(f1_score,3)))
 ```
 
 
+
 ***Calculate accuracy***
 ```{r}
 accuracy <- mean(predicted_classes == test_y)
 print(paste("Testing Accuracy:", round(100*accuracy, 3)))
+```
+
+
+
+***Plot ROC curve figure 1***
+```{r}
+PRROC_obj <- roc.curve(scores.class0 = predicted_classes, weights.class0=test_y, curve=TRUE)
+plot(PRROC_obj)
+```
+
+
+
+***Plot ROC curve figure 2***
+```{r}
+roc = roc(test_y, predicted_classes)
+roc_dat = data.frame(TPR=roc$sensitivities, FPR=1-roc$specificities)
+ggplot(roc_dat, aes(x=FPR, y=TPR))+geom_line()
 ```
 
 
@@ -327,6 +369,7 @@ test_y = y[-train_index]
 ```
 
 
+
 ***10 fold cross validation and finding best lambda for 'age' numeric variable***
 ```{r}
 set.seed(123)
@@ -337,10 +380,12 @@ best_lambda
 ```
 
 
+
 ***Plot cross validation model***
 ```{r}
 plot(cv_model)
 ```
+
 
 
 ***Store names of predictor variables***
@@ -357,10 +402,12 @@ names_of_predictors
 ```
 
 
+
 ***Finalize linear model using the ideal lambda value***
 ```{r}
 final_model <- glmnet(train_X, train_y, alpha = 1, lambda = best_lambda)
 ```
+
 
 
 ***Plot cut-off point of Lasso Regression***
@@ -369,10 +416,12 @@ plot(glmnet(train_X, train_y, alpha = 1), xvar = "lambda")+abline(v=log(best_lam
 ```
 
 
+
 ***Predict 'age' using test set***
 ```{r}
 predictions <- predict(final_model, newx = test_X, type = "response")
 ```
+
 
 
 ***RMSE, MAPE, R2***
@@ -383,6 +432,7 @@ print(paste("Mean Squared Error:", round(mean((predictions - test_y)^2), 3)))
 print(paste("Mean Absolute Percentage Error:", round(mean(abs((test_y-predictions)/test_y))*100,3)))
 print(paste("R squared:", round(caret::R2(predictions, test_y),5)))
 ```
+
 
 
 ***PCA with categorical variables converted to factors***
@@ -397,6 +447,7 @@ test = df2[train_index,]
 pcr_model <- pcr(age~., data = train,scale = T)
 summary(pcr_model)
 ```
+
 
 
 ***RMSE***
