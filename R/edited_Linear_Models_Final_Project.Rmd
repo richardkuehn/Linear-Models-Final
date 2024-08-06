@@ -2,7 +2,7 @@
 ##### By Tyler Gorecki, Ricky Kuehn, Doruk Ozar, Luke Schneider, James Siegener
 
 #### Import, Cleaning
-***libraries***
+***Libraries***
 ```{r}
 library(tidyverse)
 library(ggcorrplot)
@@ -13,13 +13,13 @@ library(caret)
 library(pls)
 ```
 
-***load data***
+***Load data***
 ```{r}
 df = expectancy = read.csv('~/Downloads/linear_models_project_data.csv')
 head(df)
 ```
 
-***drop missing values***
+***Drop missing values***
 ```{r}
 
 df = replace(df, df=="NaN", NA)
@@ -27,7 +27,7 @@ df = df %>% drop_na()
 df %>% head()
 ```
 
-***rename income column***
+***Rename 'income' values***
 ```{r}
 df = replace(df, df=="<=50K.", "<=50K")
 df = replace(df, df==">50K.", ">50K")
@@ -35,7 +35,7 @@ df = replace(df, df==">50K.", ">50K")
 df %>% head()
 ```
 
-***collapse education into bins***
+***Collapse education into bins***
 ```{r}
 df$education = replace(df$education, df$education=="1st-4th", "Elementary/Middle")
 df$education = replace(df$education, df$education=="5th-6th", "Elementary/Middle")
