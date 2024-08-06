@@ -1,0 +1,366 @@
+### Global Analysis of Education and Occupation
+##### By Tyler Gorecki, Ricky Kuehn, Doruk Ozar, Luke Schneider, James Siegener
+
+#### Import, Cleaning
+***libraries***
+```{r}
+library(tidyverse)
+library(ggcorrplot)
+library(grid)
+library(vcd)
+library(glmnet)
+library(caret)
+library(pls)
+```
+
+***load data***
+```{r}
+df = expectancy = read.csv('~/Downloads/linear_models_project_data.csv')
+head(df)
+```
+
+***drop missing values***
+```{r}
+
+df = replace(df, df=="NaN", NA)
+df = df %>% drop_na()
+df %>% head()
+```
+
+***rename income column***
+```{r}
+df = replace(df, df=="<=50K.", "<=50K")
+df = replace(df, df==">50K.", ">50K")
+
+df %>% head()
+```
+
+***collapse education into bins***
+```{r}
+df$education = replace(df$education, df$education=="1st-4th", "Elementary/Middle")
+df$education = replace(df$education, df$education=="5th-6th", "Elementary/Middle")
+df$education = replace(df$education, df$education=="7th-8th", "Elementary/Middle")
+df$education = replace(df$education, df$education=="Preschool", "Elementary/Middle")
+df$education = replace(df$education, df$education=="Assoc-acdm", "Associates")
+df$education = replace(df$education, df$education=="Assoc-voc", "Associates")
+df$education = replace(df$education, df$education=="9th", "Highschool")
+df$education = replace(df$education, df$education=="10th", "Highschool")
+df$education = replace(df$education, df$education=="11th", "Highschool")
+df$education = replace(df$education, df$education=="12th", "Highschool")
+df$education = replace(df$education, df$education=="HS-grad", "Highschool")
+
+head(df)
+```
+
+
+### EDA and Research Questions
+***How does the distribution of income vary across different age groups?***
+```{r}
+
+df$age_group <- cut(df$age, 
+                      breaks = c(0, 20, 30, 40, 50, 60, 70, 80, Inf), 
+                      labels = c("0-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-80", "81+"), 
+                      right = FALSE)
+
+df %>%
+  group_by(income, age_group) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = age_group, y = proportion, fill = income)) + 
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Proportion of Income Level per age group") + xlab("Age Group") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Income")
+
+```
+
+***What is the relationship between the number of hours worked per week and income level?***
+```{r}
+df2 <- df
+names(df2)[names(df2) == 'income'] <- 'Income'
+df2 %>% ggplot(aes(x=hours.per.week, y=Income, color=Income, fill=Income))+geom_boxplot() + ggtitle("Hours worked each week per Income Level") + xlab("Hours worked per week") + ylab("Income Level") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+***What is the relationship between the number of hours worked per week and income level?***
+```{r}
+df %>% ggplot(aes(x=hours.per.week, y=income, color=income))+geom_violin()
+```
+
+***Converting income column to dummy variables, find correlation between education number and income greater than 50K***
+```{r}
+data_dummies = fastDummies::dummy_cols(df, select_columns="income")
+cor(data_dummies$education.num, data_dummies$`income_>50K`)
+```
+
+***Income level depending on education level***
+```{r}
+df$education = factor(df$education, levels = c("Elementary/Middle", "Highschool", 'Associates', "Some-college", 'Bachelors','Prof-school', 'Masters', 'Doctorate'))
+
+df %>%
+  group_by(income, education) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = education, y = proportion, fill = income)) + 
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Income Level proportion per Education Level") + xlab("Education Level") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Income")
+```
+**Interpretation: As we can see from the above graph, the most amount of people who earns greater than 50K is people who have bachelors degree and this is because in our data we have more people who have bachelors degree than people who have Masters or Doctorate degree. Same idea applies to Highschool column, because we have more data on people whose highest level of education is highschool, that is why it looks people who earns less than 50K is in highschool column**
+
+***Income level depending on occupation***
+```{r}
+df %>%
+  group_by(income, occupation) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = occupation, y = proportion, fill = income)) + 
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Income Level proportion per Occupation") + xlab("Occupation") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  labs(fill = "Income")
+```
+**Interpretation: As we can see from the bar graph above, we can say that the most amount of people who earns above 50K is people who has executive/managerial positions. After that it comes people who has a position in Prof/specialty. These makes sense because in real life as well, Executive managers earn a lot of money and Professors who make a lot of research can earn a lot of money. On the other hand, the most amount of people who make less than 50K is people who work in clerical jobs. These might include data entring, answering phone calls, filling paperwork and etc.**
+
+***Correlation Matrix between all the numerical variables.***
+```{r}
+cor_mat <- cor(df[,c('age',"education.num", 'capital.gain','capital.loss','hours.per.week')])
+ggcorrplot(cor_mat,lab=TRUE, type='full')
+```
+**Interpretation: As you can see in the correlation matrix, multicollinearity is not an issue becase there are no variables that are highly correlated with each other**
+
+***What is the relationship between mean hours.per.week and age?***
+```{r}
+mean_df <- df %>%
+  group_by(age) %>%
+  summarise(mean_hours_per_week = mean(hours.per.week))
+
+ggplot(mean_df, aes(x = mean_hours_per_week, y = age)) +
+  geom_point(color = "blue") +
+  labs(title = "Mean Hours Per Week vs. Age",
+       x = "Mean Hours Per Week",
+       y = "Age") +
+  theme_minimal()
+```
+
+***What is the relationship between marital status and age?***
+```{r}
+ggplot(df, aes(x = marital.status, y = age)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(title = "Boxplot of Age by Marital Status",
+       x = "Marital Status",
+       y = "Age") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), plot.title = element_text(hjust = 0.5))
+```
+
+***Examine distribution of capital loss and capital gain***
+```{r}
+value_counts <- table(df$capital.loss)
+df_capital.loss_count <- data.frame(value_counts)
+df_capital.loss_count$pct <- round(100*df_capital.loss_count$Freq / sum(df_capital.loss_count$Freq),2)
+df_capital.loss_count
+```
+```{r}
+value_counts2 <- table(df$capital.gain)
+df_capital.gain_count <- data.frame(value_counts2)
+df_capital.gain_count$pct <- round(100*df_capital.gain_count$Freq / sum(df_capital.gain_count$Freq),2)
+df_capital.gain_count
+```
+**Interpretation: As we can see from the above tables, most of the people in the dataset has 0 capital loss and capital gain. This is because in real life, most of the people do not have capital loss or gain.**
+
+***Association between education level and income***
+```{r}
+contingency_table = table(df$education, df$income)
+chisq.test(contingency_table)
+```
+**Interpretation: As we can see from the Chi-squared test, education and income has a very high association because the chi-square value is extremely high and p value is really low. This means that we have to reject null hypothesis and conclude that there is a high association between education and income.**
+
+
+### Logistic Regression with Lasso and Cross Validation
+***Train Test split by 80% training and 20% testing datasets***
+```{r}
+X = model.matrix(income~0+., data=df)
+X = scale(X)
+y= df$income
+
+train_index = sample(1:nrow(df), 0.8 * nrow(df))
+
+train_X = X[train_index, ]
+train_y = y[train_index]
+
+test_X = X[-train_index, ]
+test_y = y[-train_index]
+```
+
+***10 fold cross validation and finding best lambda for 'income' categorical variable***
+```{r}
+set.seed(123)
+cv_model = cv.glmnet(x=train_X, y=train_y, alpha=1, family="binomial", type.measure = "class", nfolds = 10)
+
+best_lambda <- cv_model$lambda.min
+best_lambda
+```
+
+***Plot cross validation model***
+```{r}
+plot(cv_model)
+```
+
+***Store names of predictor variables***
+```{r}
+coefficient_matrix = as.matrix(coef(cv_model))
+
+non_zero_indices <- which(coefficient_matrix != 0)
+non_zero_coefs <- coefficient_matrix[non_zero_indices, ]
+
+names_of_predictors = rownames(coefficient_matrix)[non_zero_indices]
+#cbind(rownames(coefficient_matrix)[non_zero_indices], coefficient_matrix[coefficient_matrix!=0])
+```
+
+***Finalize logistic model using the ideal lambda value***
+```{r}
+final_model <- glmnet(train_X, train_y, alpha = 1, family = "binomial", lambda = best_lambda)
+```
+
+***Cast test_y data as 1s and 0s***
+```{r}
+#cbind(predicted_classes, test_y)
+test_y = ifelse(test_y == ">50K", 1, 0)
+```
+
+***Make predictions, construct confusion matrix where 0 represents individuals who earn <= 50K and 1 represents individuals who earn > 50K***
+```{r}
+predictions <- predict(final_model, newx = test_X, type = "response")
+#predicted_classes <- ifelse(predictions > 0.5, ">50K", "<=50K")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+
+confusion <- confusionMatrix(factor(predicted_classes), factor(test_y))
+confusion_df <- data.frame(confusion$table)
+confusion_df$Color <- with(confusion_df, ifelse(Prediction == Reference, "green", "red"))
+
+ggplot(data = confusion_df, aes(x = factor(Prediction), y = factor(Reference), fill = Color)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), color = "black", vjust = 1, size = 10) +
+  scale_fill_manual(values = c("green" = "green", "red" = "red")) +
+  theme_minimal() +
+  labs(x = "Predicted", y = "Actual", fill = "Count") +
+  ggtitle("Confusion Matrix Heatmap") +
+  scale_y_discrete(limits = rev(levels(factor(confusion_df$Reference)))) + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+***Find R squared value of logistic model***
+```{r}
+print(paste("R squared value:", round(caret::R2(predicted_classes, test_y), 4)))
+```
+
+***Precision, Recall, F1***
+```{r}
+tn = confusion$table[1, 1]
+tp = confusion$table[2, 2]
+fp = confusion$table[2, 1]
+fn = confusion$table[1, 2]
+
+precision <- tp / (tp + fp)
+recall <- tp / (tp + fn)
+
+# Calculate F1 Score
+f1_score <- 2 * (precision * recall) / (precision + recall)
+print(paste("Precision:", round(precision,3)))
+print(paste("Recall:   ", round(recall, 3)))
+print(paste("F1 Score: ", round(f1_score,3)))
+
+```
+
+***Calculate accuracy***
+```{r}
+accuracy <- mean(predicted_classes == test_y)
+print(paste("Testing Accuracy:", round(100*accuracy, 3)))
+```
+
+
+### Linear Regression with Lasso and Cross Validation
+***Train Test split by 80% training and 20% testing datasets***
+```{r}
+X = model.matrix(age~0+.-age_group, data=df)
+X = scale(X)
+y= df$age
+
+train_index = sample(1:nrow(df), 0.8 * nrow(df))
+
+train_X = X[train_index, ]
+train_y = y[train_index]
+
+test_X = X[-train_index, ]
+test_y = y[-train_index]
+
+```
+
+***10 fold cross validation and finding best lambda for 'age' numeric variable***
+```{r}
+set.seed(123)
+cv_model = cv.glmnet(x=train_X, y=train_y, alpha=1, nfolds = 10)
+
+best_lambda <- cv_model$lambda.1se
+best_lambda
+```
+
+***Plot cross validation model***
+```{r}
+plot(cv_model)
+```
+
+***Store names of predictor variables***
+```{r}
+coefficient_matrix = as.matrix(coef(cv_model))
+non_zero_indices <- which(coefficient_matrix != 0)
+
+
+non_zero_coefs <- coefficient_matrix[non_zero_indices, ]
+
+
+names_of_predictors = rownames(coefficient_matrix)[non_zero_indices]
+names_of_predictors
+```
+
+***Finalize linear model using the ideal lambda value***
+```{r}
+final_model <- glmnet(train_X, train_y, alpha = 1, lambda = best_lambda)
+```
+
+***Plot cut-off point of Lasso Regression***
+```{r}
+plot(glmnet(train_X, train_y, alpha = 1), xvar = "lambda")+abline(v=log(best_lambda))
+```
+
+***Predict 'age' using test set***
+```{r}
+predictions <- predict(final_model, newx = test_X, type = "response")
+```
+
+***RMSE, MAPE, R2***
+```{r}
+print(paste("Root Mean Squared Error:", round(RMSE(predictions, test_y), 3)))
+print(paste("Mean Absolute Error:", round(MAE(predictions, test_y), 3)))
+print(paste("Mean Squared Error:", round(mean((predictions - test_y)^2), 3)))
+print(paste("Mean Absolute Percentage Error:", round(mean(abs((test_y-predictions)/test_y))*100,3)))
+print(paste("R squared:", round(caret::R2(predictions, test_y),5)))
+```
+
+***PCA with categorical variables converted to factors***
+```{r}
+train_index = sample(1:nrow(df), 0.8 * nrow(df))
+
+df2 <- df[,-c(17)]
+
+train = df2[train_index,]
+test = df2[train_index,]
+
+pcr_model <- pcr(age~., data = train,scale = T)
+summary(pcr_model)
+```
+
+***RMSE***
+```{r}
+predictions <- predict(pcr_model, newdata = train, ncomp = 89)
+rmse <- sqrt(mean((test$age - predictions)^2))
+rmse
+```
