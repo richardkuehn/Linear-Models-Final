@@ -485,18 +485,42 @@ rmse
 
 *** Linearity Assumptions
 ```{r}
-
 predres <- data.frame(predictions = predictions, residuals = residuals)
 
 ggplot(data = predres, aes(x=predictions, y=residuals)) + geom_point() + 
   geom_hline(yintercept = 0, color = 'red')
-
 ```
 
 
 
 ```{r}
-
 ggplot(predres, aes(sample=residuals))+stat_qq()+stat_qq_line(color='red')
+```
 
+Random Forest model
+
+```{r}
+library(randomForest)
+rf.fit <- randomForest(train_X, train_y, ntree = 500, mtry = 3)
+rf.fit
+```
+
+```{r}
+predictions <- predict(rf.fit, test_X)
+mse <- mean((predictions - test_y)^2)
+print(paste("Mean Squared Error:", mse))
+
+varImpPlot(rf.fit)
+```
+
+```{r}
+results <- data.frame(Actual = test_y, Predicted = predictions)
+
+# Plot predicted vs actual values using ggplot2
+ggplot(results, aes(x=Predicted, y=Actual)) +
+  geom_point() +
+  geom_abline(slope=1, intercept=0, color="red") +
+  labs(title="Actual vs Predicted Age", x="Predicted Age", y="Actual Age") +
+  geom_smooth(method = 'lm', color = 'blue') + 
+  theme_minimal()
 ```
