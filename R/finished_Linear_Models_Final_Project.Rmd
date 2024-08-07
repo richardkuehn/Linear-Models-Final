@@ -501,14 +501,14 @@ Random Forest model
 
 ```{r}
 library(randomForest)
-rf.fit <- randomForest(train_X, train_y, ntree = 500, mtry = 3)
+rf.fit <- randomForest(train_X[,-1], train_y, ntree = 500, mtry = 10)
 rf.fit
 ```
 
 ```{r}
 predictions <- predict(rf.fit, test_X)
-mse <- mean((predictions - test_y)^2)
-print(paste("Mean Squared Error:", mse))
+rmse <- sqrt(mean((predictions - test_y)^2))
+print(paste("Root Mean Squared Error:", rmse))
 
 varImpPlot(rf.fit)
 ```
