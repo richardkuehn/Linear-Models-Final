@@ -420,6 +420,7 @@ plot(glmnet(train_X, train_y, alpha = 1), xvar = "lambda")+abline(v=log(best_lam
 ***Predict 'age' using test set***
 ```{r}
 predictions <- predict(final_model, newx = test_X, type = "response")
+residuals <- predictions - test_y
 ```
 
 
@@ -433,6 +434,21 @@ print(paste("Mean Absolute Percentage Error:", round(mean(abs((test_y-prediction
 print(paste("R squared:", round(caret::R2(predictions, test_y),5)))
 ```
 
+
+*** Linearity Assumptions
+```{r}
+
+predres <- data.frame(predictions = predictions, residuals = residuals)
+
+ggplot(data = predres, aes(x=predictions, y=residuals)) + geom_point() + 
+  geom_hline(yintercept = 0, color = 'red')
+
+```
+```{r}
+
+ggplot(predres, aes(sample=residuals))+stat_qq()+stat_qq_line(color='red')
+
+```
 
 
 ***PCA with categorical variables converted to factors***
@@ -453,6 +469,26 @@ summary(pcr_model)
 ***RMSE***
 ```{r}
 predictions <- predict(pcr_model, newdata = train, ncomp = 75)
+residuals <- predictions - test$age
 rmse <- sqrt(mean((test$age - predictions)^2))
 rmse
+```
+
+
+*** Linearity Assumptions
+```{r}
+
+predres <- data.frame(predictions = predictions, residuals = residuals)
+
+ggplot(data = predres, aes(x=predictions, y=residuals)) + geom_point() + 
+  geom_hline(yintercept = 0, color = 'red')
+
+```
+
+
+
+```{r}
+
+ggplot(predres, aes(sample=residuals))+stat_qq()+stat_qq_line(color='red')
+
 ```
