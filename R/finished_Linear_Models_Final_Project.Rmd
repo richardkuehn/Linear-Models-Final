@@ -354,11 +354,15 @@ ggplot(roc_dat, aes(x=FPR, y=TPR))+geom_line()
 ### Linear Regression with Lasso and Cross Validation
 ***Train Test split by 80% training and 20% testing datasets***
 ```{r}
-X = model.matrix(age~0+.-age_group, data=df)
+df3 <- df
+df3$capital.gain <- sqrt(df$capital.gain)
+df3$capital.loss <- sqrt(df$capital.loss)
+# df3['over50'] <- df$age > 50 
+X = model.matrix(age~0+.-age_group, data=df3)
 X = scale(X)
-y= df$age
+y= df3$age
 
-train_index = sample(1:nrow(df), 0.8 * nrow(df))
+train_index = sample(1:nrow(df3), 0.8 * nrow(df3))
 
 train_X = X[train_index, ]
 train_y = y[train_index]
@@ -366,6 +370,10 @@ train_y = y[train_index]
 test_X = X[-train_index, ]
 test_y = y[-train_index]
 
+```
+
+```{r}
+ggplot(data = df3, aes(x = df3$hours.per.week, y = df3$age)) + geom_point()
 ```
 
 
