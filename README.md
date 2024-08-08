@@ -5,8 +5,8 @@ Final Project and Presentation for University of Virginia STAT 6201
 * Rmd of final project
 * HTML of final project
 
-**data folder**
+**Data folder**
 * csv of raw data
 
-**presentation**
+**Presentation folder**
 * pdf of final presentation
