@@ -68,7 +68,6 @@ head(df)
 ### EDA and Research Questions
 ***How does the distribution of income vary across different age groups?***
 ```{r}
-
 df$age_group <- cut(df$age, 
                       breaks = c(0, 20, 30, 40, 50, 60, 70, 80, Inf), 
                       labels = c("0-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-80", "81+"), 
@@ -80,9 +79,9 @@ df %>%
   mutate(proportion = count / sum(count)) %>%
   ungroup() %>% 
   ggplot(aes(x = age_group, y = proportion, fill = income)) + 
-  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Proportion of Income Level per age group") + xlab("Age Group") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ggtitle("Proportion of Income by Age Group") + xlab("Age Group") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
   labs(fill = "Income")
-
 ```
 
 
@@ -121,7 +120,8 @@ df %>%
   mutate(proportion = count / sum(count)) %>%
   ungroup() %>% 
   ggplot(aes(x = education, y = proportion, fill = income)) + 
-  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle("Income Level proportion per Education Level") + xlab("Education Level") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
+  geom_bar(stat = 'identity', position = 'dodge')+theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ggtitle("Proportion of Income by Education Level") + xlab("Education Level") + ylab("Proportion") + theme(plot.title = element_text(hjust = 0.5)) +
   labs(fill = "Income")
 ```
 
@@ -162,8 +162,8 @@ mean_df <- df %>%
   summarise(mean_hours_per_week = mean(hours.per.week))
 
 ggplot(mean_df, aes(x = mean_hours_per_week, y = age)) +
-  geom_point(color = "blue") +
-  labs(title = "Mean Hours Per Week vs. Age",
+  geom_point(color = "red") +
+  labs(title = "Scatterplot of Mean Hours Per Week vs. Age",
        x = "Mean Hours Per Week",
        y = "Age") +
   theme_minimal()
@@ -173,8 +173,8 @@ ggplot(mean_df, aes(x = mean_hours_per_week, y = age)) +
 
 ***What is the relationship between marital status and age?***
 ```{r}
-ggplot(df, aes(x = marital.status, y = age)) +
-  geom_boxplot(fill = "lightblue", color = "black") +
+ggplot(df, aes(x = marital.status, y = age, fill = marital.status)) +
+  geom_boxplot() +
   labs(title = "Boxplot of Age by Marital Status",
        x = "Marital Status",
        y = "Age") +
@@ -208,7 +208,17 @@ contingency_table = table(df$education, df$income)
 chisq.test(contingency_table)
 ```
 
-Interpretation: As we can see from the Chi-squared test, education and income has a very high association because the chi-square value is extremely high and p value is really low. This means that we have to reject null hypothesis and conclude that there is a high association between education and income.
+Interpretation: As we can see from the Chi-squared test, education and income have a very high association because the chi-square value is extremely high and p value is really low. This means that we have to reject null hypothesis and conclude that there is a high association between education and income.
+
+
+
+***Association between age group and income***
+```{r}
+contingency_table = table(df$age_group, df$income)
+chisq.test(contingency_table)
+```
+
+Interpretation: As we can see from the Chi-squared test, age groups and income have a very high association because the chi-square value is extremely high and p value is really low. This means that we have to reject null hypothesis and conclude that there is a high association between age groups and income.
 
 
 
