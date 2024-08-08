@@ -14,6 +14,7 @@ library(caret)
 library(pls)
 library(PRROC)
 library(pROC)
+library(randomForest)
 ```
 
 
@@ -510,7 +511,6 @@ ggplot(predres, aes(sample=residuals))+stat_qq()+stat_qq_line(color='red')
 Random Forest model
 
 ```{r}
-library(randomForest)
 rf.fit <- randomForest(train_X[,-1], train_y, ntree = 500, mtry = 10)
 rf.fit
 ```
